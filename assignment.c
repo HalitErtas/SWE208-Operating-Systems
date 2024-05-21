@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#pragma region Type Definitions
 // Process structure
 typedef struct
 {
@@ -28,7 +29,8 @@ typedef struct
     int cpu_ram;
     Queue processes[10];
 } CPU;
-
+#pragma endregion
+#pragma region Queue Implementation
 // starting queue
 void initQueue(Queue *q)
 {
@@ -93,7 +95,7 @@ Process dequeue(Queue *q)
     }
     return item;
 }
-
+#pragma endregion
 // CPU-1 için FIFO algoritmasını uygula
 void cpuScheduleFIFO(Queue *q, CPU *cpu)
 {
@@ -123,26 +125,42 @@ void cpuScheduleFIFO(Queue *q, CPU *cpu)
 // Round Robin algoritması
 void roundRobin(Queue *q, CPU *cpu, int quantum_time)
 {
-    int time = 0;
+
+    // should timer start from 0 or first process arrvival time?
+    int time = front(q).arrival_time;
     char processString[100];
 
-    while (!isEmpty(q))
+    Queue readyQueue;
+    initQueue(&readyQueue);
+    while (!isEmpty(&readyQueue) || !isEmpty(q))
     {
-        Process current_process = dequeue(q);
+        while (time >= front(q).arrival_time)
+        {
+            enqueue(&readyQueue, dequeue(q));
+        }
+        // if there is a gap between two process
+        if (isEmpty(&readyQueue) && !isEmpty(q))
+        {
+            enqueue(&readyQueue, dequeue(q));
+            int time = front(&readyQueue).arrival_time;
+        }
+
+        Process current_process = dequeue(&readyQueue);
         char tempProcess[15];
         strcpy(tempProcess, current_process.process_number);
 
         // RAM ve CPU check
-        if (current_process.ram > cpu->cpu_ram || current_process.cpu_rate > cpu->cpu_ram)
+        if (current_process.ram > cpu->cpu_ram || current_process.cpu_rate > cpu->cpu_rate)
         {
             printf("time %d: process %s unsufficient resources . enqueue the que.\n", time, current_process.process_number);
+            printf("%d : %d - %d : %d\n", current_process.ram, cpu->cpu_ram, current_process.cpu_rate, cpu->cpu_rate);
             enqueue(q, current_process);
             continue;
         }
 
         // allocationg resources
         cpu->cpu_ram -= current_process.ram;
-        cpu->cpu_ram -= current_process.cpu_rate;
+        cpu->cpu_rate -= current_process.cpu_rate;
         printf("time %d: process %s is assigned to CPU-2.\n", time, current_process.process_number);
 
         if (current_process.burst_time > quantum_time)
@@ -152,8 +170,14 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time)
             current_process.burst_time -= quantum_time;
             strcat(tempProcess, "->");
             strcat(processString, tempProcess);
-            //  Kuyruğa tekrar ekle
-            enqueue(q, current_process);
+
+            // add processes if they're time and waiting
+            while (time >= front(q).arrival_time)
+            {
+                enqueue(&readyQueue, dequeue(q));
+            }
+            // add queue again to run later
+            enqueue(&readyQueue, current_process);
             printf("time %d: process %s quantum time is up, remaining burst time: %d\n", time, current_process.process_number, current_process.burst_time);
         }
         else
@@ -169,8 +193,9 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time)
 
         // deallocating resources
         cpu->cpu_ram += current_process.ram;
-        cpu->cpu_ram += current_process.cpu_rate;
+        cpu->cpu_rate += current_process.cpu_rate;
     }
+    // printf("%d - %d \n", cpu->cpu_ram, cpu->cpu_rate);
     printf("All processes are done. whole time: %d\n", time);
     printf("%s", processString);
 }
