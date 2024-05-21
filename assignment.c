@@ -241,59 +241,67 @@ void sortByArrivalTimeSJF(Queue *q)
 // CPU-2  Shortest Job First (SJF) algorithm
 void cpuScheduleSJF(Queue *q, CPU *cpu)
 {
-    int time = 1;
+    int time = front(q).arrival_time;
     Process currentProcess = dequeue(q);
     Process tempCurrentProcess = currentProcess;
 
-    while (!isEmpty(q) || !isEmpty(cpu->processes) || currentProcess.burst_time > 0)
+    // while (!isEmpty(q) || !isEmpty(cpu->processes) || currentProcess.burst_time > 0)
+    while (!isEmpty(q) || currentProcess.burst_time > 0)
     {
 
         // load process to CPU queue
-        while (!isEmpty(q))
-        {
-            Process process = dequeue(q);
+        // while (!isEmpty(q))
+        // {
+        //     Process process = dequeue(q);
 
-            if (process.arrival_time <= time)
-            {
-                if (process.ram <= cpu->cpu_ram)
-                {
-                    cpu->cpu_ram -= process.ram;
-                    enqueue(cpu->processes, process);
-                }
-                else
-                {
-                    printf("%s", "not sufficient cpu ram.");
-                    enqueue(q, process);
-                    break;
-                }
-            }
-            else
-            {
-                enqueue(q, process);
-                break;
-            }
-        }
+        //     if (process.arrival_time <= time)
+        //     {
+        //         if (process.ram <= cpu->cpu_ram)
+        //         {
+        //             cpu->cpu_ram -= process.ram;
+        //             enqueue(cpu->processes, process);
+        //         }
+        //         else
+        //         {
+        //             printf("%s", "not sufficient cpu ram.");
+        //             enqueue(q, process);
+        //             break;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         enqueue(q, process);
+        //         break;
+        //     }
+        // }
 
-        // If no process is currently running, take the next one from the CPU queue
-        if (currentProcess.burst_time == 0 && !isEmpty(cpu->processes))
-        {
-            currentProcess = dequeue(cpu->processes);
-            if (currentProcess.burst_time == 0)
-                continue;
-            printf("Time: %d, Process %s is loaded to cpu\n", time, currentProcess.process_number);
-        }
-
+        // // If no process is currently running, take the next one from the CPU queue
+        // if (currentProcess.burst_time == 0 && !isEmpty(cpu->processes))
+        // {
+        //     currentProcess = dequeue(cpu->processes);
+        //     if (currentProcess.burst_time == 0)
+        //         continue;
+        //     printf("Time: %d, Process %s is loaded to cpu\n", time, currentProcess.process_number);
+        // }
+        cpu->cpu_ram -= currentProcess.ram;
+        cpu->cpu_rate -= currentProcess.cpu_rate;
         // Simulate the execution of the current process
         if (currentProcess.burst_time > 0)
         {
-            printf("Time: %d, Processing %s (Remaining Burst Time: %d)\n", time, currentProcess.process_number, currentProcess.burst_time);
+            printf("time: %d, processing %s (Remaining Burst Time: %d)\n", time, currentProcess.process_number, currentProcess.burst_time);
             currentProcess.burst_time--;
 
             if (currentProcess.burst_time == 0)
             {
-                printf("Process %s completed at time %d\n", currentProcess.process_number, time);
-                time -= tempCurrentProcess.burst_time;
+                printf("time: %d, process %s completed\n", time + 1, currentProcess.process_number);
                 cpu->cpu_ram += currentProcess.ram;
+                cpu->cpu_rate += currentProcess.cpu_rate;
+                if (isEmpty(q))
+                {
+                    break;
+                }
+                currentProcess = dequeue(q);
+                time = currentProcess.arrival_time - 1;
                 // currentProcess = (Process){0, 0, 0}; // Reset the current process
             }
         }
