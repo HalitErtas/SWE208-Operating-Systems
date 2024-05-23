@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -123,14 +122,15 @@ void cpuScheduleFIFO(Queue *q, CPU *cpu, FILE *file)
     }
 }
 
-// Round Robin algoritması
-void roundRobin(Queue *q, CPU *cpu, int quantum_time, FILE *file)
+// Round Robin algorithm
+char *roundRobin(Queue *q, CPU *cpu, int quantum_time, FILE *file)
 {
 
-    // should timer start from 0 or first process arrvival time?
+    // timer start from first process
     int time = front(q).arrival_time;
     char processString[100];
-
+    processString[0] = '\0';
+    // this queue is used for process that came back when quantum time runs out
     Queue readyQueue;
     initQueue(&readyQueue);
     while (!isEmpty(&readyQueue) || !isEmpty(q))
@@ -154,7 +154,7 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time, FILE *file)
         if (current_process.ram > cpu->cpu_ram || current_process.cpu_rate > cpu->cpu_rate)
         {
             fprintf(file, "time %d: process %s unsufficient resources . enqueue the que.\n", time, current_process.process_number);
-            fprintf(file, "%d : %d - %d : %d\n", current_process.ram, cpu->cpu_ram, current_process.cpu_rate, cpu->cpu_rate);
+            // printf("%d : %d - %d : %d\n", current_process.ram, cpu->cpu_ram, current_process.cpu_rate, cpu->cpu_rate);
             enqueue(&readyQueue, current_process);
             continue;
         }
@@ -188,7 +188,6 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time, FILE *file)
             //  in order to print Grantt Chart.
             strcat(tempProcess, "->");
             strcat(processString, tempProcess);
-            //
             fprintf(file, "time %d: process %s is completed.\n", time, current_process.process_number);
         }
 
@@ -196,10 +195,9 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time, FILE *file)
         cpu->cpu_ram += current_process.ram;
         cpu->cpu_rate += current_process.cpu_rate;
     }
-    // printf("%d - %d \n", cpu->cpu_ram, cpu->cpu_rate);
     fprintf(file, "All processes are done. whole time: %d\n", time);
-    fprintf(file, "%s", processString);
-    processString[0] = '\0';
+    char *result = processString;
+    return result;
 }
 
 // CPU-2 sort by Short Job First Algorithm
@@ -247,44 +245,17 @@ void cpuScheduleSJF(Queue *q, CPU *cpu, FILE *file)
     Process currentProcess = dequeue(q);
     Process tempCurrentProcess = currentProcess;
 
-    // while (!isEmpty(q) || !isEmpty(cpu->processes) || currentProcess.burst_time > 0)
-    while (!isEmpty(q))
+    while (!isEmpty(q) || currentProcess.burst_time > 0)
     {
+        // RAM ve CPU check
+        if (currentProcess.ram > cpu->cpu_ram || currentProcess.cpu_rate > cpu->cpu_rate)
+        {
+            fprintf(file, "time %d: process %s unsufficient resources . enqueue the que.\n", time, currentProcess.process_number);
+            enqueue(q, currentProcess);
+            currentProcess = dequeue(q);
+            continue;
+        }
 
-        // load process to CPU queue
-        // while (!isEmpty(q))
-        // {
-        //     Process process = dequeue(q);
-
-        //     if (process.arrival_time <= time)
-        //     {
-        //         if (process.ram <= cpu->cpu_ram)
-        //         {
-        //             cpu->cpu_ram -= process.ram;
-        //             enqueue(cpu->processes, process);
-        //         }
-        //         else
-        //         {
-        //             printf("%s", "not sufficient cpu ram.");
-        //             enqueue(q, process);
-        //             break;
-        //         }
-        //     }
-        //     else
-        //     {
-        //         enqueue(q, process);
-        //         break;
-        //     }
-        // }
-
-        // // If no process is currently running, take the next one from the CPU queue
-        // if (currentProcess.burst_time == 0 && !isEmpty(cpu->processes))
-        // {
-        //     currentProcess = dequeue(cpu->processes);
-        //     if (currentProcess.burst_time == 0)
-        //         continue;
-        //     printf("Time: %d, Process %s is loaded to cpu\n", time, currentProcess.process_number);
-        // }
         cpu->cpu_ram -= currentProcess.ram;
         cpu->cpu_rate -= currentProcess.cpu_rate;
         // Simulate the execution of the current process
@@ -298,13 +269,14 @@ void cpuScheduleSJF(Queue *q, CPU *cpu, FILE *file)
                 fprintf(file, "time: %d, process %s completed\n", time + 1, currentProcess.process_number);
                 cpu->cpu_ram += currentProcess.ram;
                 cpu->cpu_rate += currentProcess.cpu_rate;
-                if (isEmpty(q))
+
+                if (!isEmpty(q))
                 {
-                    break;
+                    currentProcess = dequeue(q);
                 }
-                currentProcess = dequeue(q);
                 time = currentProcess.arrival_time - 1;
-                // currentProcess = (Process){0, 0, 0}; // Reset the current process
+                time++;
+                break;
             }
             time++;
         }
@@ -359,7 +331,7 @@ void printQueue(Queue *q, char cpuType[], char queType[], char algorithmType[])
     printf("\n");
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     FILE *file;
     char line[256];
@@ -372,7 +344,7 @@ int main()
     initQueue(&cpu2_queue3);
 
     // reading file
-    file = fopen("input.txt", "r");
+    file = fopen(argv[1], "r");
 
     // if you cannot open file, show a message
     if (file == NULL)
@@ -447,9 +419,10 @@ int main()
 
     // closing file
     fclose(file);
-    
+
     CPU cpu1;
     CPU cpu2;
+
 
     cpu1.cpu_ram = 512;
     cpu1.cpu_rate = 100;
@@ -469,11 +442,13 @@ int main()
     fprintf(file, "\n----CPU-2 Shortest Job First (SJF) Algorithm----\n");
     cpuScheduleSJF(&cpu2_queue1, &cpu2, file);
 
-    fprintf(file, "\n----CPU-2 Round Robin Algorithm (queue 2, Quantum time: 8)----\n");
-    roundRobin(&cpu2_queue2, &cpu2, 8, file);
-
-    fprintf(file, "\n----CPU-2 Round Robin Algorithm (queue 3, Quantum time: 16)----\n");
-    roundRobin(&cpu2_queue3, &cpu2, 16, file);
+    // CPU2 Queue2 printing
+    char *q2print = roundRobin(&cpu2_queue2, &cpu2, 8, file);
+    fprintf(file, "Cpu2 que2 Round Robin :%s\n", q2print, file);
+    q2print[0] = '\0';
+    // CPU2 Queue3 printing
+    char *q3print = roundRobin(&cpu2_queue3, &cpu2, 16, file);
+    fprintf(file, "Cpu2 que3 Round Robin%s", q3print, file);
 
     return 0;
 }
