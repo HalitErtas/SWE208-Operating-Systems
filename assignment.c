@@ -187,7 +187,6 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time)
             //  in order to print Grantt Chart.
             strcat(tempProcess, "->");
             strcat(processString, tempProcess);
-            //
             printf("time %d: process %s is completed.\n", time, current_process.process_number);
         }
 
@@ -358,7 +357,7 @@ void printQueue(Queue *q, char cpuType[], char queType[], char algorithmType[])
     printf("\n");
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     FILE *file;
     char line[256];
@@ -371,7 +370,7 @@ int main()
     initQueue(&cpu2_queue3);
 
     // reading file
-    file = fopen("input.txt", "r");
+    file = fopen(argv[1], "r");
 
     // if you cannot open file, show a message
     if (file == NULL)
