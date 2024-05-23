@@ -101,21 +101,30 @@ Process dequeue(Queue *q)
     return item;
 }
 #pragma endregion
-// CPU-1 için FIFO algoritmasını uygula
-void cpuScheduleFIFO(Queue *q, CPU *cpu, FILE *file)
+// do First Come First Serve for given CPU
+/*
+    parameter q - Queue which scheduling FCFS
+    parameter cpu - CPU
+    parameter file - file that writing output
+*/
+void cpuScheduleFCFS(Queue *q, CPU *cpu, FILE *file)
 {
     processString[0] = '\0';
     while (!isEmpty(q))
     {
         Process currentProcess = dequeue(q);
-        // char tempProcess[15];
+        // take process name to print later
         strcpy(tempProcess, currentProcess.process_number);
+        // checking ram
         if ((currentProcess.ram <= cpu->cpu_ram))
         {
             fprintf(file, "Process %s is queued to be assigned to CPU-1.\n", currentProcess.process_number);
+            // allocate ram resource
             cpu->cpu_ram -= currentProcess.ram;
+            // checking cpu_rate
             if (currentProcess.cpu_rate <= cpu->cpu_rate)
             {
+                // allocate cpu_rate resource
                 cpu->cpu_rate -= currentProcess.cpu_rate;
                 fprintf(file, "Process %s is assigned to CPU-1.\n", currentProcess.process_number);
                 fprintf(file, "Process %s is completed and terminated.\n", currentProcess.process_number);
@@ -123,6 +132,7 @@ void cpuScheduleFIFO(Queue *q, CPU *cpu, FILE *file)
                 strcat(tempProcess, "->");
                 strcat(processString, tempProcess);
             }
+            // deallocate ram resource
             cpu->cpu_ram += currentProcess.ram;
         }
         else
@@ -130,12 +140,19 @@ void cpuScheduleFIFO(Queue *q, CPU *cpu, FILE *file)
             fprintf(file, "Process %s could not be assigned to CPU-1 due to insufficient resourcese.\n", currentProcess.process_number);
         }
     }
+    // taking string to global variable to able to use it after the function
     result = processString;
 }
 
 // Round Robin algorithm
+/*
+    parameter q - Queue which scheduling FCFS
+    parameter quantum_time - quantum_time
+    parameter file - file that writing output
+*/
 void roundRobin(Queue *q, CPU *cpu, int quantum_time, FILE *file)
 {
+    // this counter is used for avoiding infinite loop if there is no enough resource
     int counter = 0;
     // timer start from first process
     int time = front(q).arrival_time;
@@ -179,6 +196,7 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time, FILE *file)
         cpu->cpu_rate -= current_process.cpu_rate;
         fprintf(file, "time %d: process %s is assigned to CPU-2.\n", time, current_process.process_number);
 
+        // if process can not be completed in first shoot
         if (current_process.burst_time > quantum_time)
         {
             // quantum time is up
@@ -234,8 +252,8 @@ void sortByBurstTimeSJF(Queue *q)
     }
 }
 
-// short job first arrival time short
-void sortByArrivalTimeSJF(Queue *q)
+// arrival time sort
+void sortByArrivalTime(Queue *q)
 {
     for (int i = q->front; i <= q->rear; i++)
     {
@@ -279,7 +297,8 @@ void cpuScheduleSJF(Queue *q, CPU *cpu, FILE *file)
         // Simulate the execution of the current process
         while (currentProcess.burst_time > 0)
         {
-            fprintf(file, "time: %d, processing %s (Remaining Burst Time: %d)\n", time, currentProcess.process_number, currentProcess.burst_time);
+            fprintf(file, "time: %d, processing %s (Remaining Burst Time: %d)\n", time, currentProcess.process_number,
+                    currentProcess.burst_time);
             currentProcess.burst_time--;
 
             if (currentProcess.burst_time == 0)
@@ -396,10 +415,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    // rearranging Processes according to Short Job First Algorithm
-    sortByArrivalTimeSJF(&cpu2_queue2);
-    sortByArrivalTimeSJF(&cpu2_queue3);
-    sortByArrivalTimeSJF(&cpu2_queue1);
+    // rearranging Processes according to their arrival time
+    sortByArrivalTime(&cpu2_queue2);
+    sortByArrivalTime(&cpu2_queue3);
+    sortByArrivalTime(&cpu2_queue1);
 
     printf("..::Before The Program Starts::..\n");
     printQueue(&cpu1_queue, "cpu1", "que", "(FCFS)");
@@ -428,7 +447,7 @@ int main(int argc, char *argv[])
     printf("\n..::After The Program::..\n");
     // CPU1 Queue0 printing
     fprintf(file, "----CPU-1 FIFO Algorithm----\n");
-    cpuScheduleFIFO(&cpu1_queue, &cpu1, file);
+    cpuScheduleFCFS(&cpu1_queue, &cpu1, file);
     printf("Cpu1 queue0 (FCFS) : %s\n", result);
     result[0] = '\0';
     // CPU2 Queue1 printing
@@ -439,14 +458,12 @@ int main(int argc, char *argv[])
 
     // CPU2 Queue2 printing
     fprintf(file, "\n----CPU-2 Round Robin Algorithm (queue 2, Quantum time: 8)----\n");
-    // char *q2print = roundRobin(&cpu2_queue2, &cpu2, 8, file);
     roundRobin(&cpu2_queue2, &cpu2, 8, file);
     printf("Cpu2 queue2 Round Robin : %s\n", result);
     result[0] = '\0';
 
     // CPU2 Queue3 printing
     fprintf(file, "\n----CPU-2 Round Robin Algorithm (queue 3, Quantum time: 16)----\n");
-    // char *q3print = roundRobin(&cpu2_queue3, &cpu2, 16, file);
     roundRobin(&cpu2_queue3, &cpu2, 16, file);
     printf("Cpu2 queue3 Round Robin : %s", result);
 
