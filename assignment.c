@@ -444,11 +444,11 @@ int main(int argc, char *argv[])
 
     // CPU2 Queue2 printing
     char *q2print = roundRobin(&cpu2_queue2, &cpu2, 8, file);
-    fprintf(file, "Cpu2 que2 Round Robin :%s\n", q2print, file);
+    fprintf(file, "Cpu2 que2 Round Robin :%s\n", q2print);
     q2print[0] = '\0';
     // CPU2 Queue3 printing
     char *q3print = roundRobin(&cpu2_queue3, &cpu2, 16, file);
-    fprintf(file, "Cpu2 que3 Round Robin%s", q3print, file);
+    fprintf(file, "Cpu2 que3 Round Robin%s", q3print);
 
     return 0;
 }
