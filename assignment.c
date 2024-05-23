@@ -283,35 +283,6 @@ void cpuScheduleSJF(Queue *q, CPU *cpu, FILE *file)
     }
 }
 
-// CPU-2  Round Robin algorithm
-// void cpuScheduleRoundRobin(Queue *q, int quantum, CPU *cpu)
-// {
-//     while (!isEmpty(q))
-//     {
-//         Process currentProcess = dequeue(q);
-//         if (currentProcess.ram <= cpu->cpu_ram)
-//         {
-//             cpu->cpu_ram -= currentProcess.ram;
-//             printf("Process %s is placed in the queue to be assigned to CPU-2.\n", currentProcess.process_number);
-//             printf("Process %s is assigned to CPU-2.\n", currentProcess.process_number);
-//             if (currentProcess.burst_time <= quantum)
-//             {
-//                 printf("Process %s run until the defined quantum time and is queued again because the process is not completed.\n", currentProcess.process_number);
-//                 cpu->cpu_ram += currentProcess.ram;
-//             }
-//             else
-//             {
-//                 printf("Process %s run until the defined quantum time.\n", currentProcess.process_number);
-//                 currentProcess.burst_time -= quantum;
-//                 enqueue(q, currentProcess);
-//             }
-//         }
-//         else
-//         {
-//             printf("Process %s could not be assigned to CPU-2 due to insufficient RAM.\n", currentProcess.process_number);
-//         }
-//     }
-// }
 
 // printing queue processes
 void printQueue(Queue *q, char cpuType[], char queType[], char algorithmType[])
