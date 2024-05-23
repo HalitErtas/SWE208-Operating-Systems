@@ -442,5 +442,9 @@ int main(int argc, char *argv[])
     char *q3print = roundRobin(&cpu2_queue3, &cpu2, 16);
     printf("Cpu2 que3 Round Robin%s", q3print);
 
+    free(q2print);
+    free(q3print);
+    free(file);
+
     return 0;
 }
