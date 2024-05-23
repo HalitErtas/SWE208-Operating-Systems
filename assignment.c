@@ -122,14 +122,15 @@ void cpuScheduleFIFO(Queue *q, CPU *cpu)
     }
 }
 
-// Round Robin algoritması
-void roundRobin(Queue *q, CPU *cpu, int quantum_time)
+// Round Robin algorithm
+char *roundRobin(Queue *q, CPU *cpu, int quantum_time)
 {
 
-    // should timer start from 0 or first process arrvival time?
+    // timer start from first process
     int time = front(q).arrival_time;
     char processString[100];
 
+    // this queue is used for process that came back when quantum time runs out
     Queue readyQueue;
     initQueue(&readyQueue);
     while (!isEmpty(&readyQueue) || !isEmpty(q))
@@ -153,7 +154,7 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time)
         if (current_process.ram > cpu->cpu_ram || current_process.cpu_rate > cpu->cpu_rate)
         {
             printf("time %d: process %s unsufficient resources . enqueue the que.\n", time, current_process.process_number);
-            printf("%d : %d - %d : %d\n", current_process.ram, cpu->cpu_ram, current_process.cpu_rate, cpu->cpu_rate);
+            // printf("%d : %d - %d : %d\n", current_process.ram, cpu->cpu_ram, current_process.cpu_rate, cpu->cpu_rate);
             enqueue(&readyQueue, current_process);
             continue;
         }
@@ -194,10 +195,11 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time)
         cpu->cpu_ram += current_process.ram;
         cpu->cpu_rate += current_process.cpu_rate;
     }
-    // printf("%d - %d \n", cpu->cpu_ram, cpu->cpu_rate);
     printf("All processes are done. whole time: %d\n", time);
     printf("%s", processString);
     processString[0] = '\0';
+    char *result = processString;
+    return result;
 }
 
 // CPU-2 sort by Short Job First Algorithm
@@ -245,44 +247,17 @@ void cpuScheduleSJF(Queue *q, CPU *cpu)
     Process currentProcess = dequeue(q);
     Process tempCurrentProcess = currentProcess;
 
-    // while (!isEmpty(q) || !isEmpty(cpu->processes) || currentProcess.burst_time > 0)
-    while (!isEmpty(q))
+    while (!isEmpty(q) || currentProcess.burst_time > 0)
     {
+        // RAM ve CPU check
+        if (currentProcess.ram > cpu->cpu_ram || currentProcess.cpu_rate > cpu->cpu_rate)
+        {
+            printf("time %d: process %s unsufficient resources . enqueue the que.\n", time, currentProcess.process_number);
+            enqueue(q, currentProcess);
+            currentProcess = dequeue(q);
+            continue;
+        }
 
-        // load process to CPU queue
-        // while (!isEmpty(q))
-        // {
-        //     Process process = dequeue(q);
-
-        //     if (process.arrival_time <= time)
-        //     {
-        //         if (process.ram <= cpu->cpu_ram)
-        //         {
-        //             cpu->cpu_ram -= process.ram;
-        //             enqueue(cpu->processes, process);
-        //         }
-        //         else
-        //         {
-        //             printf("%s", "not sufficient cpu ram.");
-        //             enqueue(q, process);
-        //             break;
-        //         }
-        //     }
-        //     else
-        //     {
-        //         enqueue(q, process);
-        //         break;
-        //     }
-        // }
-
-        // // If no process is currently running, take the next one from the CPU queue
-        // if (currentProcess.burst_time == 0 && !isEmpty(cpu->processes))
-        // {
-        //     currentProcess = dequeue(cpu->processes);
-        //     if (currentProcess.burst_time == 0)
-        //         continue;
-        //     printf("Time: %d, Process %s is loaded to cpu\n", time, currentProcess.process_number);
-        // }
         cpu->cpu_ram -= currentProcess.ram;
         cpu->cpu_rate -= currentProcess.cpu_rate;
         // Simulate the execution of the current process
@@ -296,13 +271,14 @@ void cpuScheduleSJF(Queue *q, CPU *cpu)
                 printf("time: %d, process %s completed\n", time + 1, currentProcess.process_number);
                 cpu->cpu_ram += currentProcess.ram;
                 cpu->cpu_rate += currentProcess.cpu_rate;
-                if (isEmpty(q))
+
+                if (!isEmpty(q))
                 {
-                    break;
+                    currentProcess = dequeue(q);
                 }
-                currentProcess = dequeue(q);
                 time = currentProcess.arrival_time - 1;
-                // currentProcess = (Process){0, 0, 0}; // Reset the current process
+                time++;
+                break;
             }
             time++;
         }
