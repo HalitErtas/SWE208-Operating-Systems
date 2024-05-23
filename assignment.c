@@ -142,7 +142,7 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time)
         if (isEmpty(&readyQueue) && !isEmpty(q))
         {
             enqueue(&readyQueue, dequeue(q));
-            int time = front(&readyQueue).arrival_time;
+            time = front(&readyQueue).arrival_time;
         }
 
         Process current_process = dequeue(&readyQueue);
@@ -154,7 +154,7 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time)
         {
             printf("time %d: process %s unsufficient resources . enqueue the que.\n", time, current_process.process_number);
             printf("%d : %d - %d : %d\n", current_process.ram, cpu->cpu_ram, current_process.cpu_rate, cpu->cpu_rate);
-            enqueue(q, current_process);
+            enqueue(&readyQueue, current_process);
             continue;
         }
 
@@ -198,6 +198,7 @@ void roundRobin(Queue *q, CPU *cpu, int quantum_time)
     // printf("%d - %d \n", cpu->cpu_ram, cpu->cpu_rate);
     printf("All processes are done. whole time: %d\n", time);
     printf("%s", processString);
+    processString[0] = '\0';
 }
 
 // CPU-2 sort by Short Job First Algorithm
@@ -246,7 +247,7 @@ void cpuScheduleSJF(Queue *q, CPU *cpu)
     Process tempCurrentProcess = currentProcess;
 
     // while (!isEmpty(q) || !isEmpty(cpu->processes) || currentProcess.burst_time > 0)
-    while (!isEmpty(q) || currentProcess.burst_time > 0)
+    while (!isEmpty(q))
     {
 
         // load process to CPU queue
@@ -286,7 +287,7 @@ void cpuScheduleSJF(Queue *q, CPU *cpu)
         cpu->cpu_ram -= currentProcess.ram;
         cpu->cpu_rate -= currentProcess.cpu_rate;
         // Simulate the execution of the current process
-        if (currentProcess.burst_time > 0)
+        while (currentProcess.burst_time > 0)
         {
             printf("time: %d, processing %s (Remaining Burst Time: %d)\n", time, currentProcess.process_number, currentProcess.burst_time);
             currentProcess.burst_time--;
@@ -304,9 +305,8 @@ void cpuScheduleSJF(Queue *q, CPU *cpu)
                 time = currentProcess.arrival_time - 1;
                 // currentProcess = (Process){0, 0, 0}; // Reset the current process
             }
+            time++;
         }
-
-        time++;
     }
 }
 
