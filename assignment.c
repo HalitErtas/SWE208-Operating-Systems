@@ -129,7 +129,7 @@ char *roundRobin(Queue *q, CPU *cpu, int quantum_time)
     // timer start from first process
     int time = front(q).arrival_time;
     char processString[100];
-
+    processString[0] = '\0';
     // this queue is used for process that came back when quantum time runs out
     Queue readyQueue;
     initQueue(&readyQueue);
@@ -196,8 +196,6 @@ char *roundRobin(Queue *q, CPU *cpu, int quantum_time)
         cpu->cpu_rate += current_process.cpu_rate;
     }
     printf("All processes are done. whole time: %d\n", time);
-    printf("%s", processString);
-    processString[0] = '\0';
     char *result = processString;
     return result;
 }
@@ -436,11 +434,13 @@ int main(int argc, char *argv[])
     printf("\n----CPU-2 Shortest Job First (SJF) Algorithm----\n");
     cpuScheduleSJF(&cpu2_queue1, &cpu2);
 
-    printf("\n----CPU-2 Round Robin Algorithm (queue 2, Quantum time: 8)----\n");
-    roundRobin(&cpu2_queue2, &cpu2, 8);
-
-    printf("\n----CPU-2 Round Robin Algorithm (queue 3, Quantum time: 16)----\n");
-    roundRobin(&cpu2_queue3, &cpu2, 16);
+    // CPU2 Queue2 printing
+    char *q2print = roundRobin(&cpu2_queue2, &cpu2, 8);
+    printf("Cpu2 que2 Round Robin :%s\n", q2print);
+    q2print[0] = '\0';
+    // CPU2 Queue3 printing
+    char *q3print = roundRobin(&cpu2_queue3, &cpu2, 16);
+    printf("Cpu2 que3 Round Robin%s", q3print);
 
     return 0;
 }
